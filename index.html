@@ -36,6 +36,7 @@ button.ghost{background:transparent;color:var(--acc)}details{margin-top:28px}sum
 <div id="answer"></div>
 <h2>Compare the options</h2><div class="card wrap" id="opts"></div>
 <h2>Where you stand at this NAV</h2><div class="card wrap" id="pos"></div>
+<h2>Withdrawal history</h2><div class="card" id="hist"></div>
 <details class="card"><summary>Tax assumptions (edit if the rules change)</summary><div class="set">
  <div><label for="ex">LTCG exemption per person (₹)</label><input id="ex" type="number" value="125000"></div>
  <div><label for="ltr">LTCG rate %</label><input id="ltr" type="number" step="0.1" value="12.5"></div>
@@ -102,6 +103,14 @@ function render(){
   row('Units remaining',p=>p.rem,un)+row('Current fund value',p=>p.val)+row('Change vs last day NAV',p=>p.rem*(nav-prev))+row('Cost of remaining units (FIFO)',p=>p.cost)+row('Expected profit / (loss) today',p=>p.pl)+
   `<tr><td>Expected profit / (loss) %</td><td${cl(d.pl)}>${(d.pl/d.cost*100).toFixed(1)}%</td><td${cl(j.pl)}>${(j.pl/j.cost*100).toFixed(1)}%</td><td${cl(d.pl+j.pl)}>${((d.pl+j.pl)/(d.cost+j.cost)*100).toFixed(1)}%</td></tr>`+
   row('Total invested',p=>p.inv)+row('Withdrawn so far (SWP)',p=>p.wd)+row('Overall gain incl. withdrawals',p=>p.val+p.wd-p.inv)+row('Realised gain / (loss) this FY',p=>p.fyr)+row('Tax-free gain room left this FY',p=>p.room)+'</table>';
+ const rem={};H.forEach(k=>rem[k]=lotsOf(k).reduce((a,l)=>a+l.u,0));
+ const fd=t=>new Date(t+'T00:00:00').toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+ const rows=S.swp.map((x,i)=>({...x,i})).sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:a.i-b.i).map(x=>{rem[x.h]-=x.u;return{...x,left:rem[x.h],bal:rem[x.h]*x.n}}).reverse();
+ $('#hist').innerHTML=`<div class="facts" style="margin:0 0 14px"><div><b>${inr(d.val+j.val)}</b><span>latest fund value at NAV ₹${nav}</span></div>
+ <div><b>${inr(d.val)}</b><span>Debrup latest value</span></div><div><b>${inr(j.val)}</b><span>Jayashree latest value</span></div>
+ <div><b>${inr(d.wd+j.wd)}</b><span>total withdrawn so far (${rows.length} withdrawals)</span></div></div>
+ <div class="wrap"><table><tr><th>Date</th><th>Holder</th><th>Amount</th><th>NAV</th><th>Units</th><th>Units left</th><th>Value after</th></tr>`+
+ rows.map(x=>`<tr><td>${fd(x.d)}</td><td>${x.h}</td><td>${inr(x.c)}</td><td>${(+x.n).toFixed(2)}</td><td>${un(x.u)}</td><td>${un(x.left)}</td><td>${inr(x.bal)}</td></tr>`).join('')+'</table></div>';
 }
 $('#nav').value=S.nav||DATA.nav;$('#amt').value=S.amt||DATA.amt;$('#prev').value=S.prev||DATA.nav;$('#day').value=new Date().toLocaleDateString('en-CA');
 document.querySelectorAll('input').forEach(i=>i.addEventListener('input',render));render();
